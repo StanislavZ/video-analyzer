@@ -3,15 +3,34 @@ package main
 import (
 	"fmt"
 	"image/jpeg"
+	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/corona10/goimagehash"
 )
 
-func main() {
-	var imagePath string
+var imagePath string
+var hashAverageSlice []*goimagehash.ImageHash
+var hashDifferenceSlice []*goimagehash.ImageHash
+var imageDistances []int
 
+func main() {
+
+	start := time.Now()
+
+	processArguments()
+
+	generateImageHashes()
+
+	calculateImageDistances()
+
+	elapsed := time.Since(start)
+	log.Printf("Time took %s", elapsed)
+}
+
+func processArguments() {
 	//Check if ImagePath was specified as a first line argument
 	if len(os.Args) > 1 {
 		imagePath = os.Args[1]
@@ -19,10 +38,12 @@ func main() {
 		fmt.Println("Path to video frames haven't been specified as first argument")
 		os.Exit(1)
 	}
+}
 
-	for i := 1; i < 10; i++ {
-		fileName := imagePath + "thumb" + "000" + strconv.Itoa(i) + ".jpg"
-		file, fileErr := os.Open(fileName)
+func generateImageHashes() {
+	for i := 1; i < 50; i++ {
+		imagePath := generateImagePath(i)
+		file, fileErr := os.Open(imagePath)
 
 		if fileErr != nil {
 			fmt.Println("Error: can't read file: ", fileErr)
@@ -39,36 +60,48 @@ func main() {
 		hashAverage, _ := goimagehash.AverageHash(img)
 		hashDifference, _ := goimagehash.DifferenceHash(img)
 
+		hashAverageSlice = append(hashAverageSlice, hashAverage)
+		hashDifferenceSlice = append(hashDifferenceSlice, hashDifference)
+
 		file.Close()
 	}
+}
 
-	// file1Path := imagePath + "thumb0001.jpg"
-	// file2Path := imagePath + "thumb0002.jpg"
+func generateImagePath(index int) string {
+	indexString := strconv.Itoa(index)
 
-	// file1, file1err := os.Open(file1Path)
-	// file2, file2err := os.Open(file2Path)
-	// defer file1.Close()
-	// defer file2.Close()
+	var prefix string
 
-	// if file1err != nil {
-	// 	fmt.Println("Can't read file1: ", file1err)
-	// 	os.Exit(1)
-	// }
+	switch len(indexString) {
+	case 1:
+		prefix = "000"
+	case 2:
+		prefix = "00"
+	case 3:
+		prefix = "0"
+	}
 
-	// if file2err != nil {
-	// 	fmt.Println("Can't read file2: ", file2err)
-	// 	os.Exit(1)
-	// }
+	return imagePath + "thumb" + prefix + indexString + ".jpg"
+}
 
-	// img1, _ := jpeg.Decode(file1)
-	// img2, _ := jpeg.Decode(file2)
-	// hash1, _ := goimagehash.AverageHash(img1)
-	// hash2, _ := goimagehash.AverageHash(img2)
-	// distance, _ := hash1.Distance(hash2)
-	// fmt.Printf("AverageHash Distance between images: %v\n", distance)
+func calculateImageDistances() {
+	for i := 0; i < len(hashAverageSlice)-1; i++ {
+		hash1 := hashAverageSlice[i]
+		hash2 := hashAverageSlice[i+1]
 
-	// hash1, _ = goimagehash.DifferenceHash(img1)
-	// hash2, _ = goimagehash.DifferenceHash(img2)
-	// distance, _ = hash1.Distance(hash2)
-	// fmt.Printf("DifferenceHash Distance between images: %v\n", distance)
+		distance, _ := hash1.Distance(hash2)
+
+		imageDistances = append(imageDistances, distance)
+	}
+
+	for i := 0; i < len(hashDifferenceSlice)-1; i++ {
+		hash1 := hashDifferenceSlice[i]
+		hash2 := hashDifferenceSlice[i+1]
+
+		distance, _ := hash1.Distance(hash2)
+
+		imageDistances[i] += distance
+	}
+
+	fmt.Println(imageDistances)
 }
