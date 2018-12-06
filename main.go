@@ -44,7 +44,7 @@ func processArguments() {
 }
 
 func generateImageHashes() {
-	for i := 1; i < 1301; i++ {
+	for i := 1; i < 1659; i++ {
 		imagePath := generateImagePath(i)
 		file, fileErr := os.Open(imagePath)
 
@@ -117,6 +117,7 @@ func calculateImageDistances() {
 func analyzeVideoFreeze() {
 
 	freezeHappened := false
+	freezeFrameStarted := 0
 
 	for i := 0; i < len(imageDistances); i++ {
 
@@ -124,6 +125,7 @@ func analyzeVideoFreeze() {
 
 		if distance == 0 {
 			freezeHappened = true
+			freezeFrameStarted = i
 			j := i
 			//Check the length of the freeze
 			for imageDistances[j] == 0 {
@@ -137,7 +139,7 @@ func analyzeVideoFreeze() {
 			freezedFramesAmount := j - i
 			i = j
 			if freezedFramesAmount > 1 {
-				log.Printf("Freeze took %s frame(s):", strconv.Itoa(freezedFramesAmount))
+				log.Printf("Freeze started at frame %s and took %s frame(s):", strconv.Itoa(freezeFrameStarted), strconv.Itoa(freezedFramesAmount))
 			}
 		}
 	}
