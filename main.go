@@ -44,7 +44,7 @@ func processArguments() {
 }
 
 func generateImageHashes() {
-	for i := 1; i < 301; i++ {
+	for i := 1; i < 1301; i++ {
 		imagePath := generateImagePath(i)
 		file, fileErr := os.Open(imagePath)
 
@@ -77,10 +77,14 @@ func generateImagePath(index int) string {
 
 	switch len(indexString) {
 	case 1:
-		prefix = "000"
+		prefix = "00000"
 	case 2:
-		prefix = "00"
+		prefix = "0000"
 	case 3:
+		prefix = "000"
+	case 4:
+		prefix = "00"
+	case 5:
 		prefix = "0"
 	}
 
@@ -106,6 +110,7 @@ func calculateImageDistances() {
 		imageDistances[i] += distance
 	}
 
+	fmt.Println("Image Distance length: ", len(imageDistances))
 	fmt.Println("Image Distance array: ", imageDistances)
 }
 
@@ -122,7 +127,12 @@ func analyzeVideoFreeze() {
 			j := i
 			//Check the length of the freeze
 			for imageDistances[j] == 0 {
-				j++
+				//If index is at the end of slice then stop
+				if j < len(imageDistances)-1 {
+					j++
+				} else {
+					break
+				}
 			}
 			freezedFramesAmount := j - i
 			i = j
