@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 	"image/jpeg"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/corona10/goimagehash"
 )
 
+var imagesToProcess int
 var imagePath string
 var hashAverageSlice []*goimagehash.ImageHash
 var hashDifferenceSlice []*goimagehash.ImageHash
@@ -21,6 +24,8 @@ func main() {
 	start := time.Now()
 
 	processArguments()
+
+	parseImagesDirectory()
 
 	generateImageHashes()
 
@@ -44,7 +49,7 @@ func processArguments() {
 }
 
 func generateImageHashes() {
-	for i := 1; i < 1659; i++ {
+	for i := 1; i < imagesToProcess+1; i++ {
 		imagePath := generateImagePath(i)
 		file, fileErr := os.Open(imagePath)
 
@@ -124,7 +129,6 @@ func analyzeVideoFreeze() {
 		distance := imageDistances[i]
 
 		if distance == 0 {
-			freezeHappened = true
 			freezeFrameStarted = i
 			j := i
 			//Check the length of the freeze
@@ -138,13 +142,40 @@ func analyzeVideoFreeze() {
 			}
 			freezedFramesAmount := j - i
 			i = j
-			if freezedFramesAmount > 1 {
-				log.Printf("Freeze started at frame %s and took %s frame(s):", strconv.Itoa(freezeFrameStarted), strconv.Itoa(freezedFramesAmount))
-			}
+
+			//calculate distance on the edges of the freeze, if its non zero then no freeze
+			//edgeFramesDistance := calculateTwoImagesDistance(freezeFrameStarted, i)
+
+			freezeHappened = true
+			log.Printf("Freeze started at frame %s and took %s frame(s):", strconv.Itoa(freezeFrameStarted), strconv.Itoa(freezedFramesAmount))
 		}
 	}
 
 	if !freezeHappened {
 		fmt.Println("No video freezing detected")
 	}
+}
+
+func calculateTwoImagesDistance(index1, index2 int) int {
+
+	distance1, _ := hashAverageSlice[index1].Distance(hashAverageSlice[index2+1])
+	distance2, _ := hashDifferenceSlice[index1].Distance(hashDifferenceSlice[index2+1])
+
+	return distance1 + distance2
+}
+
+func parseImagesDirectory() {
+	files, err := ioutil.ReadDir(imagePath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		if strings.Contains(file.Name(), ".jpg") {
+			imagesToProcess++
+		}
+	}
+
+	fmt.Println("imagesToProcess: ", imagesToProcess)
 }
