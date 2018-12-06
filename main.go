@@ -26,7 +26,10 @@ func main() {
 
 	calculateImageDistances()
 
+	analyzeVideoFreeze()
+
 	elapsed := time.Since(start)
+
 	log.Printf("Time took %s", elapsed)
 }
 
@@ -41,7 +44,7 @@ func processArguments() {
 }
 
 func generateImageHashes() {
-	for i := 1; i < 50; i++ {
+	for i := 1; i < 301; i++ {
 		imagePath := generateImagePath(i)
 		file, fileErr := os.Open(imagePath)
 
@@ -103,5 +106,33 @@ func calculateImageDistances() {
 		imageDistances[i] += distance
 	}
 
-	fmt.Println(imageDistances)
+	fmt.Println("Image Distance array: ", imageDistances)
+}
+
+func analyzeVideoFreeze() {
+
+	freezeHappened := false
+
+	for i := 0; i < len(imageDistances); i++ {
+
+		distance := imageDistances[i]
+
+		if distance == 0 {
+			freezeHappened = true
+			j := i
+			//Check the length of the freeze
+			for imageDistances[j] == 0 {
+				j++
+			}
+			freezedFramesAmount := j - i
+			i = j
+			if freezedFramesAmount > 1 {
+				log.Printf("Freeze took %s frame(s):", strconv.Itoa(freezedFramesAmount))
+			}
+		}
+	}
+
+	if !freezeHappened {
+		fmt.Println("No video freezing detected")
+	}
 }
